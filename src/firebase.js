@@ -1,7 +1,7 @@
 // firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 
@@ -18,20 +18,23 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Analytics (only in production, with error handling)
-let analytics;
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  try {
-    analytics = getAnalytics(app);
-  } catch (e) {
-    console.warn('Analytics initialization failed:', e);
-  }
-}
-
 // Initialize services with error handling
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Initialize Analytics (only in production, with error handling)
+export const analytics = (() => {
+  if (typeof window === 'undefined' || process.env.NODE_ENV !== 'production') {
+    return null;
+  }
+  try {
+    return getAnalytics(app);
+  } catch (e) {
+    console.warn('Analytics initialization failed:', e);
+    return null;
+  }
+})();
 
 // Configure Firestore settings to prevent connection issues and AbortError
 try {
@@ -46,18 +49,20 @@ try {
 }
 
 // Global unhandledrejection handler to gracefully ignore AbortError logs
-window.addEventListener('unhandledrejection', (event) => {
-  if (event.reason && event.reason.name === 'AbortError') {
-    // Silently ignore AbortError to prevent console spam
-    event.preventDefault();
-    return;
-  }
-  
-  // Log other unhandled rejections for debugging
-  if (event.reason && event.reason.name !== 'AbortError') {
-    console.error('Unhandled promise rejection:', event.reason);
-  }
-});
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason && event.reason.name === 'AbortError') {
+      // Silently ignore AbortError to prevent console spam
+      event.preventDefault();
+      return;
+    }
+    
+    // Log other unhandled rejections for debugging
+    if (event.reason && event.reason.name !== 'AbortError') {
+      console.error('Unhandled promise rejection:', event.reason);
+    }
+  });
+}
 
 // Export for backward compatibility
 export const firestore = db;

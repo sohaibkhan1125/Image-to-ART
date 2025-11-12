@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaUpload, FaArrowDown } from 'react-icons/fa';
+import { FaUpload } from 'react-icons/fa';
 
 const Hero = ({ onUploadClick }) => {
   const [heroTitle, setHeroTitle] = useState('Transform Your Photos into Stunning Pixel Paintings 🎨');

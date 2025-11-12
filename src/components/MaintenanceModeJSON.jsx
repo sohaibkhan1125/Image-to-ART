@@ -1,5 +1,5 @@
 // MaintenanceModeJSON.jsx - Maintenance mode component using JSON backend
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 
 const MaintenanceModeJSON = () => {

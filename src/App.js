@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Header from './components/Header';
 import HeaderSimple from './components/HeaderSimple';
 import Hero from './components/Hero';
 import MainTool from './components/MainTool';
@@ -8,7 +7,6 @@ import HowItWorks from './components/HowItWorks';
 import About from './components/About';
 import FAQ from './components/FAQ';
 import ContentDisplay from './components/ContentDisplay';
-import Footer from './components/Footer';
 import FooterSimple from './components/FooterSimple';
 import MaintenanceModeDisplay from './components/MaintenanceModeDisplay';
 import PrivateRoute from './components/PrivateRoute';
@@ -32,30 +30,24 @@ function App() {
     mainToolRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Ensure pixelated image is generated when component mounts with uploaded image
-  useEffect(() => {
-    if (uploadedImage && !pixelatedImage) {
-      console.log('Regenerating pixelated image on mount');
-      generatePixelatedImage(uploadedImage, pixelSize, brightness, contrast, shadow);
+  const generatePixelatedImage = useCallback((image, overrides = {}) => {
+    if (!image) {
+      return;
     }
-  }, [uploadedImage]);
 
-  const handleImageUpload = (image) => {
-    console.log('Image uploaded:', image);
-    console.log('Image src:', image.src);
-    console.log('Image dimensions:', image.width, 'x', image.height);
-    
-    setUploadedImage(image);
-    
-    // Show original image immediately as fallback
-    setPixelatedImage(image.src);
-    
-    // Generate pixelated version
-    generatePixelatedImage(image, pixelSize, brightness, contrast, shadow);
-  };
+    const {
+      pixelSize: pixelSizeValue = pixelSize,
+      brightness: brightnessValue = brightness,
+      contrast: contrastValue = contrast,
+      shadow: shadowValue = shadow,
+    } = overrides;
 
-  const generatePixelatedImage = (image, pixelSize, brightness = 1, contrast = 1, shadow = 0) => {
-    console.log('Generating image with effects:', { pixelSize, brightness, contrast, shadow });
+    console.log('Generating image with effects:', {
+      pixelSize: pixelSizeValue,
+      brightness: brightnessValue,
+      contrast: contrastValue,
+      shadow: shadowValue,
+    });
     
     // Set loading state
     setIsGenerating(true);
@@ -64,7 +56,8 @@ function App() {
     if (!image.complete || image.naturalWidth === 0) {
       console.log('Image not loaded yet, waiting...');
       image.onload = () => {
-        generatePixelatedImage(image, pixelSize, brightness, contrast, shadow);
+        image.onload = null;
+        generatePixelatedImage(image, overrides);
       };
       return;
     }
@@ -82,24 +75,24 @@ function App() {
       
       // Apply canvas filters for real-time effects
       ctx.filter = `
-        brightness(${brightness})
-        contrast(${contrast})
-        drop-shadow(0 0 ${shadow}px rgba(0, 0, 0, 0.6))
+        brightness(${brightnessValue})
+        contrast(${contrastValue})
+        drop-shadow(0 0 ${shadowValue}px rgba(0, 0, 0, 0.6))
       `;
       
       // When pixel size is 0, show original image
-      if (pixelSize <= 0) {
+      if (pixelSizeValue <= 0) {
         console.log('Showing original image (no pixelation)');
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       } else {
-        console.log('Applying pixelation with size:', pixelSize);
+        console.log('Applying pixelation with size:', pixelSizeValue);
         
         // Disable image smoothing for crisp pixel art
         ctx.imageSmoothingEnabled = false;
         
         // Calculate dimensions for pixelation
-        const w = Math.ceil(canvas.width / pixelSize);
-        const h = Math.ceil(canvas.height / pixelSize);
+        const w = Math.ceil(canvas.width / pixelSizeValue);
+        const h = Math.ceil(canvas.height / pixelSizeValue);
         
         console.log('Pixelation dimensions:', w, 'x', h);
         
@@ -130,33 +123,55 @@ function App() {
       console.error('Error in image processing:', error);
       setIsGenerating(false);
     }
+  }, [pixelSize, brightness, contrast, shadow]);
+
+  // Ensure pixelated image is generated when component mounts with uploaded image
+  useEffect(() => {
+    if (uploadedImage && !pixelatedImage) {
+      console.log('Regenerating pixelated image on mount');
+      generatePixelatedImage(uploadedImage);
+    }
+  }, [uploadedImage, pixelatedImage, generatePixelatedImage]);
+
+  const handleImageUpload = (image) => {
+    console.log('Image uploaded:', image);
+    console.log('Image src:', image.src);
+    console.log('Image dimensions:', image.width, 'x', image.height);
+    
+    setUploadedImage(image);
+    
+    // Show original image immediately as fallback
+    setPixelatedImage(image.src);
+    
+    // Generate pixelated version
+    generatePixelatedImage(image);
   };
 
   const handlePixelSizeChange = (newSize) => {
     setPixelSize(newSize);
     if (uploadedImage) {
-      generatePixelatedImage(uploadedImage, newSize, brightness, contrast, shadow);
+      generatePixelatedImage(uploadedImage, { pixelSize: newSize });
     }
   };
 
   const handleBrightnessChange = (newBrightness) => {
     setBrightness(newBrightness);
     if (uploadedImage) {
-      generatePixelatedImage(uploadedImage, pixelSize, newBrightness, contrast, shadow);
+      generatePixelatedImage(uploadedImage, { brightness: newBrightness });
     }
   };
 
   const handleContrastChange = (newContrast) => {
     setContrast(newContrast);
     if (uploadedImage) {
-      generatePixelatedImage(uploadedImage, pixelSize, brightness, newContrast, shadow);
+      generatePixelatedImage(uploadedImage, { contrast: newContrast });
     }
   };
 
   const handleShadowChange = (newShadow) => {
     setShadow(newShadow);
     if (uploadedImage) {
-      generatePixelatedImage(uploadedImage, pixelSize, brightness, contrast, newShadow);
+      generatePixelatedImage(uploadedImage, { shadow: newShadow });
     }
   };
 
