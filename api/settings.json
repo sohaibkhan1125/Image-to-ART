@@ -1,0 +1,19 @@
+{
+  "maintenance": false,
+  "title": "PixelArt Converter",
+  "content": "",
+  "footerLinks": [
+    {
+      "id": 1,
+      "platform": "Facebook",
+      "icon": "FaFacebookF",
+      "url": "https://facebook.com"
+    },
+    {
+      "id": 2,
+      "platform": "YouTube",
+      "icon": "FaYoutube",
+      "url": "https://youtube.com"
+    }
+  ]
+}
