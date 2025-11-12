@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const filePath = path.join(process.cwd(), "api", "settings.json");
+  const filePath = path.join(process.cwd(), "api", "settings-data.json");
 
   // GET settings
   if (req.method === "GET") {
