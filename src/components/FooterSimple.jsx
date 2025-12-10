@@ -23,32 +23,15 @@ const FooterSimple = () => {
 
   useEffect(() => {
     isMountedRef.current = true;
-    
-    // Load footer links
+
+    // Load footer links from Supabase
     const loadFooterLinks = async () => {
       try {
-        // Try to fetch from API first
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-        const isDevelopment = process.env.NODE_ENV === 'development';
-        
-        if (!isDevelopment || process.env.REACT_APP_API_URL) {
-          const response = await fetch(`${API_BASE_URL}/api/settings`);
-          
-          if (response.ok) {
-            const data = await response.json();
-            setFooterLinks(data.footerLinks || []);
-            return;
-          }
-        }
-        
-        // Fallback to localStorage
-        const savedSettings = localStorage.getItem('admin_settings');
-        if (savedSettings) {
-          const data = JSON.parse(savedSettings);
-          setFooterLinks(data.footerLinks || []);
-        }
+        const { loadContent } = await import('../supabaseService');
+        const data = await loadContent('footer_links', true);
+        setFooterLinks(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.warn('Error loading footer links:', error);
+        console.error('Error loading footer links:', error);
         setFooterLinks([]);
       }
     };
@@ -63,7 +46,7 @@ const FooterSimple = () => {
     };
 
     window.addEventListener('settingsUpdated', handleSettingsUpdate);
-    
+
     return () => {
       isMountedRef.current = false;
       window.removeEventListener('settingsUpdated', handleSettingsUpdate);
@@ -111,12 +94,12 @@ const FooterSimple = () => {
                 {loading ? 'Loading...' : websiteTitle}
               </span>
             </div>
-            
+
             <p className="text-gray-300 mb-6 max-w-md">
-              Transform your images into stunning pixel art instantly. 
+              Transform your images into stunning pixel art instantly.
               Free, secure, and works directly in your browser.
             </p>
-            
+
             <div className="flex items-center space-x-4">
               {footerLinks.length > 0 ? (
                 footerLinks.map((link) => {
@@ -143,7 +126,7 @@ const FooterSimple = () => {
                   } else if (link.platform === 'Reddit') {
                     IconComponent = FaReddit;
                   }
-                  
+
                   return (
                     <motion.a
                       key={link.id}

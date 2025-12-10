@@ -1,13 +1,8 @@
-// SettingsContext.jsx - Context for managing JSON backend settings
+// SettingsContext.jsx - Context for managing Supabase settings
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { loadContent, saveContent } from '../supabaseService';
 
 const SettingsContext = createContext();
-
-// API base URL - use environment variable or fallback to localhost for development
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-
-// Check if we're in development mode
-const isDevelopment = process.env.NODE_ENV === 'development';
 
 export const useSettings = () => {
   const context = useContext(SettingsContext);
@@ -26,150 +21,123 @@ export const SettingsProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch settings from JSON backend or localStorage fallback
+  // Fetch settings from Supabase
   const fetchSettings = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Try to fetch from API first
-      if (!isDevelopment || process.env.REACT_APP_API_URL) {
-        const response = await fetch(`${API_BASE_URL}/api/settings`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        // Ensure footerLinks is always an array
-        if (!Array.isArray(data.footerLinks)) {
-          data.footerLinks = [];
-        }
-        setSettings(data);
-        
-        // Dispatch custom event for real-time updates
-        window.dispatchEvent(new CustomEvent('settingsUpdated', {
-          detail: data
-        }));
-        
-        return;
-      }
-      
-      // Fallback to localStorage in development
-      throw new Error('API not available, using localStorage fallback');
-      
+
+      // Load all settings from Supabase
+      const [maintenanceData, titleData, footerLinksData] = await Promise.all([
+        loadContent('maintenance_mode', true),
+        loadContent('website_title'),
+        loadContent('footer_links', true)
+      ]);
+
+      const newSettings = {
+        maintenance: maintenanceData?.enabled || false,
+        title: titleData || 'PixelArt Converter',
+        footerLinks: Array.isArray(footerLinksData) ? footerLinksData : []
+      };
+
+      setSettings(newSettings);
+
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('settingsUpdated', {
+        detail: newSettings
+      }));
+
     } catch (err) {
-      console.warn('API not available, using localStorage fallback:', err.message);
-      
-      // Use localStorage as fallback
-      try {
-        const savedSettings = localStorage.getItem('admin_settings');
-        if (savedSettings) {
-          const data = JSON.parse(savedSettings);
-          // Ensure footerLinks is always an array
-          if (!Array.isArray(data.footerLinks)) {
-            data.footerLinks = [];
-          }
-          setSettings(data);
-          
-          // Dispatch custom event for real-time updates
-          window.dispatchEvent(new CustomEvent('settingsUpdated', {
-            detail: data
-          }));
-        } else {
-          // Use default settings if no localStorage data
-          const defaultSettings = {
-            maintenance: false,
-            title: 'PixelArt Converter',
-            footerLinks: []
-          };
-          setSettings(defaultSettings);
-        }
-      } catch (localStorageErr) {
-        console.error('Error loading from localStorage:', localStorageErr);
-        
-        // Use default settings on error
-        const defaultSettings = {
-          maintenance: false,
-          title: 'PixelArt Converter',
-          footerLinks: []
-        };
-        setSettings(defaultSettings);
-      }
+      console.error('Error loading settings from Supabase:', err);
+      setError('Failed to load settings. Please try again.');
+
+      // Use default settings on error
+      const defaultSettings = {
+        maintenance: false,
+        title: 'PixelArt Converter',
+        footerLinks: []
+      };
+      setSettings(defaultSettings);
     } finally {
       setLoading(false);
     }
   };
 
-  // Update settings in JSON backend or localStorage fallback
+  // Update settings in Supabase
   const updateSettings = async (newSettings) => {
     try {
       setError(null);
-      
-      // Try to update via API first
-      if (!isDevelopment || process.env.REACT_APP_API_URL) {
-        const response = await fetch(`${API_BASE_URL}/api/settings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newSettings),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        setSettings(result.data);
-        
-        // Dispatch custom event for real-time updates
-        window.dispatchEvent(new CustomEvent('settingsUpdated', {
-          detail: result.data
-        }));
-        
-        return result;
+
+      // Save individual settings to Supabase
+      const promises = [];
+
+      if (newSettings.maintenance !== undefined) {
+        promises.push(
+          saveContent('maintenance_mode', { enabled: newSettings.maintenance })
+        );
       }
-      
-      // Fallback to localStorage in development
-      throw new Error('API not available, using localStorage fallback');
-      
+
+      if (newSettings.title !== undefined) {
+        promises.push(
+          saveContent('website_title', newSettings.title)
+        );
+      }
+
+      if (newSettings.footerLinks !== undefined) {
+        promises.push(
+          saveContent('footer_links', newSettings.footerLinks)
+        );
+      }
+
+      const results = await Promise.all(promises);
+
+      // Check if all saves were successful
+      const allSuccess = results.every(result => result.success);
+
+      if (!allSuccess) {
+        throw new Error('Failed to save some settings');
+      }
+
+      // Update local state
+      setSettings(newSettings);
+
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('settingsUpdated', {
+        detail: newSettings
+      }));
+
+      return {
+        message: 'Settings updated successfully',
+        data: newSettings
+      };
+
     } catch (err) {
-      console.warn('API not available, using localStorage fallback:', err.message);
-      
-      // Use localStorage as fallback
-      try {
-        // Save to localStorage
-        localStorage.setItem('admin_settings', JSON.stringify(newSettings));
-        
-        // Update local state
-        setSettings(newSettings);
-        
-        // Dispatch custom event for real-time updates
-        window.dispatchEvent(new CustomEvent('settingsUpdated', {
-          detail: newSettings
-        }));
-        
-        // Return success result
-        return {
-          message: 'Settings updated successfully (localStorage)',
-          data: newSettings
-        };
-      } catch (localStorageErr) {
-        console.error('Error saving to localStorage:', localStorageErr);
-        setError('Failed to save settings. Please try again.');
-        throw localStorageErr;
-      }
+      console.error('Error saving settings to Supabase:', err);
+      setError('Failed to save settings. Please try again.');
+      throw err;
     }
   };
 
   // Update maintenance mode
   const updateMaintenanceMode = async (maintenance) => {
     try {
-      await updateSettings({
-        ...settings,
-        maintenance: Boolean(maintenance)
+      const result = await saveContent('maintenance_mode', {
+        enabled: Boolean(maintenance)
       });
+
+      if (result.success) {
+        const newSettings = {
+          ...settings,
+          maintenance: Boolean(maintenance)
+        };
+        setSettings(newSettings);
+
+        window.dispatchEvent(new CustomEvent('settingsUpdated', {
+          detail: newSettings
+        }));
+      } else {
+        throw new Error(result.error?.message || 'Failed to update maintenance mode');
+      }
     } catch (err) {
       console.error('Error updating maintenance mode:', err);
       throw err;
@@ -179,10 +147,22 @@ export const SettingsProvider = ({ children }) => {
   // Update website title
   const updateTitle = async (title) => {
     try {
-      await updateSettings({
-        ...settings,
-        title: String(title).trim() || 'PixelArt Converter'
-      });
+      const titleValue = String(title).trim() || 'PixelArt Converter';
+      const result = await saveContent('website_title', titleValue);
+
+      if (result.success) {
+        const newSettings = {
+          ...settings,
+          title: titleValue
+        };
+        setSettings(newSettings);
+
+        window.dispatchEvent(new CustomEvent('settingsUpdated', {
+          detail: newSettings
+        }));
+      } else {
+        throw new Error(result.error?.message || 'Failed to update title');
+      }
     } catch (err) {
       console.error('Error updating title:', err);
       throw err;
@@ -195,11 +175,22 @@ export const SettingsProvider = ({ children }) => {
       const currentLinks = settings.footerLinks || [];
       const newId = currentLinks.length > 0 ? Math.max(...currentLinks.map(link => link.id), 0) + 1 : 1;
       const updatedLinks = [...currentLinks, { ...newLink, id: newId }];
-      
-      await updateSettings({
-        ...settings,
-        footerLinks: updatedLinks
-      });
+
+      const result = await saveContent('footer_links', updatedLinks);
+
+      if (result.success) {
+        const newSettings = {
+          ...settings,
+          footerLinks: updatedLinks
+        };
+        setSettings(newSettings);
+
+        window.dispatchEvent(new CustomEvent('settingsUpdated', {
+          detail: newSettings
+        }));
+      } else {
+        throw new Error(result.error?.message || 'Failed to add footer link');
+      }
     } catch (err) {
       console.error('Error adding footer link:', err);
       throw err;
@@ -210,14 +201,25 @@ export const SettingsProvider = ({ children }) => {
   const updateFooterLink = async (linkId, updatedLink) => {
     try {
       const currentLinks = settings.footerLinks || [];
-      const updatedLinks = currentLinks.map(link => 
+      const updatedLinks = currentLinks.map(link =>
         link.id === linkId ? { ...link, ...updatedLink } : link
       );
-      
-      await updateSettings({
-        ...settings,
-        footerLinks: updatedLinks
-      });
+
+      const result = await saveContent('footer_links', updatedLinks);
+
+      if (result.success) {
+        const newSettings = {
+          ...settings,
+          footerLinks: updatedLinks
+        };
+        setSettings(newSettings);
+
+        window.dispatchEvent(new CustomEvent('settingsUpdated', {
+          detail: newSettings
+        }));
+      } else {
+        throw new Error(result.error?.message || 'Failed to update footer link');
+      }
     } catch (err) {
       console.error('Error updating footer link:', err);
       throw err;
@@ -229,11 +231,22 @@ export const SettingsProvider = ({ children }) => {
     try {
       const currentLinks = settings.footerLinks || [];
       const updatedLinks = currentLinks.filter(link => link.id !== linkId);
-      
-      await updateSettings({
-        ...settings,
-        footerLinks: updatedLinks
-      });
+
+      const result = await saveContent('footer_links', updatedLinks);
+
+      if (result.success) {
+        const newSettings = {
+          ...settings,
+          footerLinks: updatedLinks
+        };
+        setSettings(newSettings);
+
+        window.dispatchEvent(new CustomEvent('settingsUpdated', {
+          detail: newSettings
+        }));
+      } else {
+        throw new Error(result.error?.message || 'Failed to delete footer link');
+      }
     } catch (err) {
       console.error('Error deleting footer link:', err);
       throw err;
@@ -254,7 +267,7 @@ export const SettingsProvider = ({ children }) => {
     };
 
     window.addEventListener('settingsUpdated', handleSettingsUpdate);
-    
+
     return () => {
       window.removeEventListener('settingsUpdated', handleSettingsUpdate);
     };

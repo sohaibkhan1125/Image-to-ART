@@ -11,29 +11,26 @@ const HeroManagement = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('hero_settings');
-      if (saved) {
-        const data = JSON.parse(saved);
+    const loadHeroSettings = async () => {
+      try {
+        const { loadContent } = await import('../supabaseService');
+        const data = await loadContent('hero_settings', true);
         if (data?.title) setTitle(data.title);
         if (data?.subtitle) setSubtitle(data.subtitle);
+      } catch (e) {
+        console.error('Error loading hero settings:', e);
       }
-    } catch (e) {
-      // ignore
-    }
+    };
+
+    loadHeroSettings();
   }, []);
 
-  const resetToStored = () => {
+  const resetToStored = async () => {
     try {
-      const saved = localStorage.getItem('hero_settings');
-      if (saved) {
-        const data = JSON.parse(saved);
-        setTitle(data?.title || DEFAULT_TITLE);
-        setSubtitle(data?.subtitle || DEFAULT_SUBTITLE);
-      } else {
-        setTitle(DEFAULT_TITLE);
-        setSubtitle(DEFAULT_SUBTITLE);
-      }
+      const { loadContent } = await import('../supabaseService');
+      const data = await loadContent('hero_settings', true);
+      setTitle(data?.title || DEFAULT_TITLE);
+      setSubtitle(data?.subtitle || DEFAULT_SUBTITLE);
       setSuccess('Reset to last saved values.');
       setError(null);
     } catch (e) {
@@ -42,15 +39,21 @@ const HeroManagement = () => {
     }
   };
 
-  const save = () => {
+  const save = async () => {
     setSaving(true);
     setSuccess(null);
     setError(null);
     try {
       const payload = { title, subtitle };
-      localStorage.setItem('hero_settings', JSON.stringify(payload));
-      window.dispatchEvent(new CustomEvent('heroSettingsUpdated', { detail: payload }));
-      setSuccess('Hero content saved!');
+      const { saveContent } = await import('../supabaseService');
+      const result = await saveContent('hero_settings', payload);
+
+      if (result.success) {
+        window.dispatchEvent(new CustomEvent('heroSettingsUpdated', { detail: payload }));
+        setSuccess('Hero content saved!');
+      } else {
+        throw new Error(result.error?.message || 'Failed to save');
+      }
     } catch (e) {
       setError('Failed to save hero content.');
     } finally {

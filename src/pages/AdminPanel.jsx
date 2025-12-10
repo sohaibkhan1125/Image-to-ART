@@ -11,17 +11,22 @@ const AdminPanel = () => {
   const [activeSection, setActiveSection] = useState('general');
 
   useEffect(() => {
-    // Load maintenance mode from localStorage
-    try {
-      const savedMaintenanceMode = localStorage.getItem('maintenance_mode');
-      if (savedMaintenanceMode !== null) {
-        setMaintenanceMode(JSON.parse(savedMaintenanceMode));
+    // Load maintenance mode from Supabase
+    const loadMaintenanceMode = async () => {
+      try {
+        const { loadContent } = await import('../supabaseService');
+        const data = await loadContent('maintenance_mode', true);
+        if (data && data.enabled !== undefined) {
+          setMaintenanceMode(data.enabled);
+        }
+      } catch (error) {
+        console.error('Error loading maintenance mode from Supabase:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading maintenance mode from localStorage:', error);
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    loadMaintenanceMode();
   }, []);
 
   const handleLogout = async () => {
@@ -36,20 +41,25 @@ const AdminPanel = () => {
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
-      // Save to localStorage
-      localStorage.setItem('maintenance_mode', JSON.stringify(maintenanceMode));
-      
+      // Save to Supabase
+      const { saveContent } = await import('../supabaseService');
+      const result = await saveContent('maintenance_mode', { enabled: maintenanceMode });
+
+      if (!result.success) {
+        throw new Error(result.error?.message || 'Failed to save settings');
+      }
+
       // Dispatch custom event for real-time updates
       window.dispatchEvent(new CustomEvent('maintenanceModeChanged', {
         detail: { maintenanceMode }
       }));
-      
+
       // Show success message
       const successMessage = document.createElement('div');
       successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
       successMessage.textContent = 'Settings saved successfully!';
       document.body.appendChild(successMessage);
-      
+
       setTimeout(() => {
         if (document.body.contains(successMessage)) {
           document.body.removeChild(successMessage);
@@ -62,7 +72,7 @@ const AdminPanel = () => {
       errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
       errorMessage.textContent = 'Failed to save settings. Please try again.';
       document.body.appendChild(errorMessage);
-      
+
       setTimeout(() => {
         if (document.body.contains(errorMessage)) {
           document.body.removeChild(errorMessage);
@@ -111,11 +121,10 @@ const AdminPanel = () => {
             <nav className="space-y-2">
               <button
                 onClick={() => setActiveSection('general')}
-                className={`w-full text-left px-4 py-3 rounded-lg transition duration-200 ${
-                  activeSection === 'general'
+                className={`w-full text-left px-4 py-3 rounded-lg transition duration-200 ${activeSection === 'general'
                     ? 'bg-blue-600 text-white'
                     : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
+                  }`}
               >
                 General Settings
               </button>
@@ -128,7 +137,7 @@ const AdminPanel = () => {
           {activeSection === 'general' && (
             <div className="max-w-2xl">
               <h2 className="text-3xl font-bold text-gray-900 mb-8">General Settings</h2>
-              
+
               <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <div>
@@ -137,7 +146,7 @@ const AdminPanel = () => {
                       Enable maintenance mode to show a maintenance message to visitors
                     </p>
                   </div>
-                  
+
                   {/* Toggle Switch */}
                   <div className="relative">
                     <input
@@ -149,34 +158,29 @@ const AdminPanel = () => {
                     />
                     <label
                       htmlFor="maintenance-toggle"
-                      className={`relative inline-flex items-center h-6 w-11 rounded-full cursor-pointer transition-colors duration-200 ${
-                        maintenanceMode ? 'bg-blue-600' : 'bg-gray-300'
-                      }`}
+                      className={`relative inline-flex items-center h-6 w-11 rounded-full cursor-pointer transition-colors duration-200 ${maintenanceMode ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
                     >
                       <span
-                        className={`inline-block w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 ${
-                          maintenanceMode ? 'translate-x-6' : 'translate-x-1'
-                        }`}
+                        className={`inline-block w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 ${maintenanceMode ? 'translate-x-6' : 'translate-x-1'
+                          }`}
                       />
                     </label>
                   </div>
                 </div>
 
                 {/* Status Display */}
-                <div className={`p-4 rounded-lg mb-6 ${
-                  maintenanceMode 
-                    ? 'bg-red-50 border border-red-200' 
+                <div className={`p-4 rounded-lg mb-6 ${maintenanceMode
+                    ? 'bg-red-50 border border-red-200'
                     : 'bg-green-50 border border-green-200'
-                }`}>
+                  }`}>
                   <div className="flex items-center">
-                    <div className={`w-3 h-3 rounded-full mr-3 ${
-                      maintenanceMode ? 'bg-red-500' : 'bg-green-500'
-                    }`}></div>
-                    <span className={`font-medium ${
-                      maintenanceMode ? 'text-red-800' : 'text-green-800'
-                    }`}>
-                      {maintenanceMode 
-                        ? 'Maintenance mode is ON - Website is in maintenance' 
+                    <div className={`w-3 h-3 rounded-full mr-3 ${maintenanceMode ? 'bg-red-500' : 'bg-green-500'
+                      }`}></div>
+                    <span className={`font-medium ${maintenanceMode ? 'text-red-800' : 'text-green-800'
+                      }`}>
+                      {maintenanceMode
+                        ? 'Maintenance mode is ON - Website is in maintenance'
                         : 'Maintenance mode is OFF - Website is running normally'
                       }
                     </span>

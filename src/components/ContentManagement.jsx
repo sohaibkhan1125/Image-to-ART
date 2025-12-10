@@ -30,26 +30,12 @@ const ContentManagement = () => {
 
 	const loadContent = async () => {
 		try {
-			const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-			const isDevelopment = process.env.NODE_ENV === 'development';
-			
-			if (!isDevelopment || process.env.REACT_APP_API_URL) {
-				const response = await fetch(`${API_BASE_URL}/api/settings`);
-				if (response.ok) {
-					const data = await response.json();
-					setContent(data.content || '');
-					return;
-				}
-			}
-			
-			// Fallback to localStorage
-			const savedSettings = localStorage.getItem('admin_settings');
-			if (savedSettings) {
-				const data = JSON.parse(savedSettings);
-				setContent(data.content || '');
-			}
+			const { loadContent: loadFromSupabase } = await import('../supabaseService');
+			const data = await loadFromSupabase('pixelart_homepage_content');
+			setContent(data || '');
 		} catch (error) {
-			console.warn('Error loading content:', error);
+			console.error('Error loading content:', error);
+			setError('Failed to load content. Please try again.');
 		}
 	};
 
@@ -59,40 +45,20 @@ const ContentManagement = () => {
 		setSuccess(null);
 
 		try {
-			const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-			const isDevelopment = process.env.NODE_ENV === 'development';
-			
-			const settingsData = {
-				maintenance: false,
-				title: "PixelArt Converter",
-				content: content
-			};
+			const { saveContent: saveToSupabase } = await import('../supabaseService');
+			const result = await saveToSupabase('pixelart_homepage_content', content);
 
-			if (!isDevelopment || process.env.REACT_APP_API_URL) {
-				const response = await fetch(`${API_BASE_URL}/api/settings`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify(settingsData),
-				});
-
-				if (response.ok) {
-					setSuccess('Content saved successfully!');
-					// Update localStorage as backup
-					localStorage.setItem('admin_settings', JSON.stringify(settingsData));
-					// Dispatch event to update other components
-					window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: settingsData }));
-				} else {
-					throw new Error('Failed to save content');
-				}
+			if (result.success) {
+				setSuccess('Content saved successfully!');
+				// Dispatch event to update other components
+				window.dispatchEvent(new CustomEvent('contentUpdated', {
+					detail: { slug: 'homepage_text', content }
+				}));
 			} else {
-				// Save to localStorage in development
-				localStorage.setItem('admin_settings', JSON.stringify(settingsData));
-				setSuccess('Content saved to localStorage!');
-				window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: settingsData }));
+				throw new Error(result.error?.message || 'Failed to save content');
 			}
 		} catch (error) {
+			console.error('Error saving content:', error);
 			setError('Error saving content: ' + error.message);
 		} finally {
 			setSaving(false);
