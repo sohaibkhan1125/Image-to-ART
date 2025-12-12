@@ -9,44 +9,31 @@ const TABLE_NAME = "website_content_pixelart_converter";
  * @param {string|object} content - Content to save (will be stringified if object)
  * @returns {Promise<{success: boolean, data?: any, error?: any}>}
  */
+/**
+ * ADMIN PANEL: Save content with smart duplicate handling
+ * Allows saving even if 'slug' is not unique in DB schema.
+ * Cleans up duplicates by keeping only the most recent one.
+ */
 export async function saveContent(slug, content) {
     try {
-        // Convert content to string if it's an object
         const contentString = typeof content === 'object' ? JSON.stringify(content) : content;
+        console.log(`[Supabase] Saving content for slug: ${slug}`);
 
-        // Step 1: Check if slug exists
-        const { data: existingRow, error: checkError } = await supabase
+        // 1. Check for existing rows (fetch ALL to detect duplicates)
+        const { data: existingRows, error: checkError } = await supabase
             .from(TABLE_NAME)
-            .select("id")
+            .select("id, updated_at")
             .eq("slug", slug)
-            .maybeSingle(); // Use maybeSingle() to avoid error if no row exists
+            .order('updated_at', { ascending: false });
 
         if (checkError) {
             console.error("Supabase Check Error:", checkError);
             return { success: false, error: checkError };
         }
 
-        let result;
-
-        if (existingRow) {
-            // Step 2a: Row exists → UPDATE
-            const { data, error } = await supabase
-                .from(TABLE_NAME)
-                .update({
-                    content: contentString,
-                    updated_at: new Date().toISOString()
-                })
-                .eq("slug", slug)
-                .select();
-
-            if (error) {
-                console.error("Supabase Update Error:", error);
-                return { success: false, error };
-            }
-
-            result = { success: true, data, action: 'updated' };
-        } else {
-            // Step 2b: Row does not exist → INSERT
+        // 2. Decide Action
+        if (!existingRows || existingRows.length === 0) {
+            // INSERT (No rows exist)
             const { data, error } = await supabase
                 .from(TABLE_NAME)
                 .insert([{
@@ -56,16 +43,34 @@ export async function saveContent(slug, content) {
                 }])
                 .select();
 
-            if (error) {
-                console.error("Supabase Insert Error:", error);
-                return { success: false, error };
+            if (error) return { success: false, error };
+            return { success: true, data, action: 'inserted' };
+
+        } else {
+            // UPDATE (Rows exist)
+            // Use the ID of the most recent row (first in list due to sort)
+            const targetId = existingRows[0].id;
+
+            const { data, error } = await supabase
+                .from(TABLE_NAME)
+                .update({
+                    content: contentString,
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", targetId) // Update by ID to be safe
+                .select();
+
+            if (error) return { success: false, error };
+
+            // CLEANUP: If duplicates exist, delete older ones
+            if (existingRows.length > 1) {
+                console.log(`[Supabase] Found ${existingRows.length} duplicates for ${slug}. Cleaning up...`);
+                const idsToDelete = existingRows.slice(1).map(r => r.id);
+                await supabase.from(TABLE_NAME).delete().in('id', idsToDelete);
             }
 
-            result = { success: true, data, action: 'inserted' };
+            return { success: true, data, action: 'updated' };
         }
-
-        console.log(`Content ${result.action} successfully for slug: ${slug}`);
-        return result;
 
     } catch (err) {
         console.error("Supabase Save Exception:", err);
@@ -74,32 +79,25 @@ export async function saveContent(slug, content) {
 }
 
 /**
- * FRONTEND: Load content from Supabase with automatic default row creation
- * @param {string} slug - Content identifier (e.g., "homepage_text")
- * @param {boolean} parseJSON - Whether to parse content as JSON (default: false)
- * @param {string|object} defaultContent - Default content if row doesn't exist
- * @returns {Promise<string|object|null>}
+ * FRONTEND: Load content robustly
+ * Handles duplicate rows by taking the most recent one.
  */
 export async function loadContent(slug, parseJSON = false, defaultContent = "") {
     try {
-        const { data, error } = await supabase
+        // Fetch most recent row instead of using maybeSingle() which fails on duplicates
+        const { data: rows, error } = await supabase
             .from(TABLE_NAME)
             .select("content")
             .eq("slug", slug)
-            .maybeSingle(); // Use maybeSingle() to avoid error if no row exists
+            .order('updated_at', { ascending: false })
+            .limit(1);
 
         if (error) {
             console.error("Supabase Load Error:", error);
-
-            // If error is "no rows returned", create default row
-            if (error.code === 'PGRST116' || !data) {
-                console.log(`Creating default row for slug: ${slug}`);
-                await createDefaultRow(slug, defaultContent);
-                return parseJSON ? (typeof defaultContent === 'object' ? defaultContent : null) : defaultContent;
-            }
-
-            return parseJSON ? null : "";
+            // Don't auto-create on generic error, only if confirmed empty later
         }
+
+        const data = rows?.[0];
 
         // If no data found, create default row
         if (!data) {
@@ -110,7 +108,6 @@ export async function loadContent(slug, parseJSON = false, defaultContent = "") 
 
         const content = data?.content || (parseJSON ? null : "");
 
-        // Parse JSON if requested and content exists
         if (parseJSON && content) {
             try {
                 return JSON.parse(content);
@@ -128,13 +125,21 @@ export async function loadContent(slug, parseJSON = false, defaultContent = "") 
 }
 
 /**
- * HELPER: Create a default row if it doesn't exist
- * @param {string} slug - Content identifier
- * @param {string|object} defaultContent - Default content value
- * @returns {Promise<{success: boolean, data?: any, error?: any}>}
+ * HELPER: Create a default row safely
  */
 async function createDefaultRow(slug, defaultContent = "") {
     try {
+        // Double check existence before inserting to avoid race conditions
+        const { count } = await supabase
+            .from(TABLE_NAME)
+            .select('*', { count: 'exact', head: true })
+            .eq('slug', slug);
+
+        if (count > 0) {
+            console.log(`Default row creation skipped: Content for ${slug} already exists.`);
+            return { success: true };
+        }
+
         const contentString = typeof defaultContent === 'object'
             ? JSON.stringify(defaultContent)
             : defaultContent;

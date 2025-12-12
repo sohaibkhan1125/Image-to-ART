@@ -23,6 +23,8 @@ const ContentManagement = () => {
 	const [saving, setSaving] = useState(false);
 	const [success, setSuccess] = useState(null);
 	const [error, setError] = useState(null);
+	const [debugMode, setDebugMode] = useState(false); // New debug toggle
+	const [lastSaved, setLastSaved] = useState(null); // Track what we tried to save
 
 	useEffect(() => {
 		loadContent();
@@ -43,16 +45,20 @@ const ContentManagement = () => {
 		setSaving(true);
 		setError(null);
 		setSuccess(null);
+		setLastSaved(content); // Capture what we are sending
 
 		try {
 			const { saveContent: saveToSupabase } = await import('../supabaseService');
+
+			console.log('[ContentManagement] Saving content to Supabase:', content); // Debug log
+
 			const result = await saveToSupabase('pixelart_homepage_content', content);
 
 			if (result.success) {
 				setSuccess('Content saved successfully!');
 				// Dispatch event to update other components
 				window.dispatchEvent(new CustomEvent('contentUpdated', {
-					detail: { slug: 'homepage_text', content }
+					detail: { slug: 'pixelart_homepage_content', content }
 				}));
 			} else {
 				throw new Error(result.error?.message || 'Failed to save content');
@@ -84,14 +90,50 @@ const ContentManagement = () => {
 				</div>
 			)}
 
-			<div className="main-container">
-				<FroalaEditorComponent
-					tag='textarea'
-					model={content}
-					onModelChange={setContent}
-					config={froalaConfig}
-				/>
+			<div className="flex justify-end mb-2">
+				<button
+					onClick={() => setDebugMode(!debugMode)}
+					className="text-xs text-blue-600 underline"
+				>
+					{debugMode ? 'Switch to Rich Editor' : 'Switch to Debug/Raw Editor'}
+				</button>
 			</div>
+
+			<div className="main-container">
+				{debugMode ? (
+					<div className="p-4 border-2 border-dashed border-blue-300 rounded bg-blue-50">
+						<label className="block text-sm font-bold text-blue-800 mb-2">Raw Content Debug Mode</label>
+						<textarea
+							className="w-full h-64 p-4 border rounded font-mono text-sm"
+							value={content}
+							onChange={(e) => setContent(e.target.value)}
+							placeholder="Type raw HTML or text here..."
+						/>
+						<div className="mt-2 text-xs text-gray-500">
+							Current Length: {content.length} characters
+						</div>
+					</div>
+				) : (
+					<FroalaEditorComponent
+						tag='textarea'
+						model={content}
+						onModelChange={(model) => {
+							console.log('Froala model validation:', model);
+							setContent(model);
+						}}
+						config={froalaConfig}
+					/>
+				)}
+			</div>
+
+			{/* Debug Info Display */}
+			{lastSaved !== null && (
+				<div className="mt-4 p-3 bg-gray-100 border rounded text-xs font-mono overflow-auto max-h-32">
+					<strong>Last Attempted Save Payload:</strong><br />
+					Length: {lastSaved.length}<br />
+					Content: {lastSaved.substring(0, 200)}...
+				</div>
+			)}
 
 			<div className="mt-6 flex justify-end space-x-4">
 				<button
