@@ -1,22 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import FroalaEditorComponent from 'react-froala-wysiwyg';
-import 'froala-editor/css/froala_style.min.css';
-import 'froala-editor/css/froala_editor.pkgd.min.css';
-import 'froala-editor/js/plugins.pkgd.min.js';
-import 'font-awesome/css/font-awesome.css';
-import 'froala-editor/js/third_party/font_awesome.min.js';
-import './ContentEditor.css';
-
-const froalaConfig = {
-	key: 'nQE2uG3B1F1nmnspC5qpH3B3C11A6D5F5F5G4A-8A-7A2cefE3B2F3C2G2ilva1EAJLQCVLUVBf1NXNRSSATEXA-62WVLGKF2G2H2G1I4B3B2B8D7F6==',
-	placeholderText: 'Type or paste your content here!',
-	toolbarButtons: [
-		['undo', 'redo', '|', 'bold', 'italic', 'underline', 'strikeThrough'],
-		['paragraphFormat', 'align', 'formatOL', 'formatUL', 'outdent', 'indent'],
-		['insertLink', 'insertTable', 'quote', 'html']
-	],
-	charCounterCount: true
-};
+import QuillEditor from './QuillEditor';
 
 const ContentManagement = () => {
 	const [content, setContent] = useState('');
@@ -114,14 +97,10 @@ const ContentManagement = () => {
 						</div>
 					</div>
 				) : (
-					<FroalaEditorComponent
-						tag='textarea'
-						model={content}
-						onModelChange={(model) => {
-							console.log('Froala model validation:', model);
-							setContent(model);
-						}}
-						config={froalaConfig}
+					<QuillEditor
+						value={content}
+						onChange={setContent}
+						onSave={saveContent}
 					/>
 				)}
 			</div>
@@ -135,6 +114,17 @@ const ContentManagement = () => {
 				</div>
 			)}
 
+			{/* Only show bottom buttons in debug mode or if saving via editor is not enough, 
+                but editor has its own save button. Let's keep these for consistency, 
+                or maybe hide the Save button since editor has one within toolbar?
+                The requirement didn't specify removing them, but the editor has a save button.
+                Let's keep them as a fallback or for debug mode, or cleaner UI.
+                For now, I will keep them but maybe condition them? 
+                Actually, the new editor UI has a save button in the toolbar header.
+                Having two save buttons might be confusing. 
+                However, in debug mode we definitely need them.
+                Let's keep them generally for now as a safe bet.
+            */}
 			<div className="mt-6 flex justify-end space-x-4">
 				<button
 					onClick={loadContent}
