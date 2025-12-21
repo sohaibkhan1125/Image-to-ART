@@ -1,4 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import {
+    FaPenNib, FaCode, FaSun, FaMoon, FaCompress, FaExpand,
+    FaTrashAlt, FaSave, FaExclamationCircle, FaCheckCircle,
+    FaCopy, FaDownload, FaTimes, FaFileCode
+} from 'react-icons/fa';
 import './QuillEditor.css';
 
 const QuillEditor = ({ value, onChange, onSave }) => {
@@ -205,26 +210,26 @@ const QuillEditor = ({ value, onChange, onSave }) => {
             {/* Header */}
             <div className="editor-header">
                 <div className="editor-logo">
-                    <i className="fas fa-pen-nib"></i>
+                    <FaPenNib className="icon-mr" />
                     Professional Editor
                 </div>
                 <div className="header-controls">
                     <button className="btn-editor btn-editor-primary" onClick={handleConvertToCode}>
-                        <i className="fas fa-code"></i> Convert Text to Code
+                        <FaCode className="icon-mr" /> Convert Text to Code
                     </button>
                     <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 5px' }}></div>
                     <button className="btn-editor btn-editor-icon" onClick={handleThemeToggle} title="Toggle Dark Mode">
-                        <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+                        {isDarkMode ? <FaSun /> : <FaMoon />}
                     </button>
                     <button className="btn-editor btn-editor-icon" onClick={handleFullscreen} title="Fullscreen">
-                        <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'}`}></i>
+                        {isFullscreen ? <FaCompress /> : <FaExpand />}
                     </button>
                     <button className="btn-editor btn-editor-icon" onClick={handleClear} title="Clear All">
-                        <i className="fas fa-trash-alt"></i>
+                        <FaTrashAlt />
                     </button>
                     {onSave && (
                         <button className="btn-editor" onClick={() => { onSave(); showToast('Saving...'); }} title="Save Content">
-                            <i className="fas fa-save"></i> Save
+                            <FaSave className="icon-mr" /> Save
                         </button>
                     )}
                 </div>
@@ -248,7 +253,7 @@ const QuillEditor = ({ value, onChange, onSave }) => {
 
             {/* Toast */}
             <div className={`editor-toast ${toast.show ? 'show' : ''}`} style={{ borderLeftColor: toast.type === 'error' ? 'var(--error-color)' : 'var(--primary-color)' }}>
-                <i className={`fas ${toast.type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
+                {toast.type === 'error' ? <FaExclamationCircle /> : <FaCheckCircle />}
                 <span>{toast.message}</span>
             </div>
 
@@ -256,16 +261,16 @@ const QuillEditor = ({ value, onChange, onSave }) => {
             <div className={`editor-modal ${showCodeModal ? 'active' : ''}`}>
                 <div className="modal-content-wrapper">
                     <div className="modal-header-editor">
-                        <h3><i className="fas fa-file-code"></i> Generated HTML Code</h3>
+                        <h3><FaFileCode className="icon-mr" /> Generated HTML Code</h3>
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <button className="btn-editor" onClick={copyCode}>
-                                <i className="fas fa-copy"></i> Copy HTML
+                                <FaCopy className="icon-mr" /> Copy HTML
                             </button>
                             <button className="btn-editor" onClick={downloadHtml}>
-                                <i className="fas fa-download"></i> Download .html
+                                <FaDownload className="icon-mr" /> Download .html
                             </button>
                             <button className="btn-editor btn-editor-icon" onClick={() => setShowCodeModal(false)}>
-                                <i className="fas fa-times"></i>
+                                <FaTimes />
                             </button>
                         </div>
                     </div>

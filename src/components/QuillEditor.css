@@ -105,6 +105,10 @@
     justify-content: center;
 }
 
+.icon-mr {
+    margin-right: 6px;
+}
+
 /* Editor Container */
 .editor-main-container {
     flex: 1;
@@ -117,7 +121,7 @@
 }
 
 /* Quill Overrides */
-. professional-editor-wrapper .ql-toolbar.ql-snow {
+.professional-editor-wrapper .ql-toolbar.ql-snow {
     border: none;
     border-bottom: 1px solid var(--border-color);
     background: var(--toolbar-bg);

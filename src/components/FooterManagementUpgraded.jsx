@@ -12,6 +12,7 @@ import {
   FaGithub,
   FaDiscord,
   FaReddit,
+  FaLink,
 } from "react-icons/fa";
 
 const FooterManagementUpgraded = () => {
@@ -58,7 +59,7 @@ const FooterManagementUpgraded = () => {
       setSelectedPlatform('');
       setUrl('');
       setSuccess('Footer link added successfully!');
-      
+
       // Show success message
       const successMessage = document.createElement('div');
       successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
@@ -103,7 +104,7 @@ const FooterManagementUpgraded = () => {
       setEditingPlatform('');
       setEditingUrl('');
       setSuccess('Footer link updated successfully!');
-      
+
       // Show success message
       const successMessage = document.createElement('div');
       successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
@@ -134,7 +135,7 @@ const FooterManagementUpgraded = () => {
     try {
       await deleteFooterLink(linkId);
       setSuccess('Footer link deleted successfully!');
-      
+
       // Show success message
       const successMessage = document.createElement('div');
       successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
@@ -174,7 +175,7 @@ const FooterManagementUpgraded = () => {
   return (
     <div className="max-w-6xl">
       <h2 className="text-3xl font-bold text-gray-900 mb-8">Footer Management</h2>
-      
+
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
@@ -190,7 +191,7 @@ const FooterManagementUpgraded = () => {
       {/* Current Footer Links */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Footer Links</h3>
-        
+
         {settings.footerLinks && Array.isArray(settings.footerLinks) && settings.footerLinks.length > 0 ? (
           <div className="space-y-4">
             {settings.footerLinks.map((link) => {
@@ -227,7 +228,7 @@ const FooterManagementUpgraded = () => {
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">
-            <i className="fas fa-link text-4xl mb-4"></i>
+            <FaLink className="text-4xl mb-4 text-gray-400 mx-auto" />
             <p>No footer links added yet.</p>
             <p className="text-sm">Add your first social media link below.</p>
           </div>
@@ -239,7 +240,7 @@ const FooterManagementUpgraded = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           {editingId ? 'Edit Footer Link' : 'Add New Footer Link'}
         </h3>
-        
+
         <form onSubmit={editingId ? handleUpdateIcon : handleAddIcon} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -268,7 +269,7 @@ const FooterManagementUpgraded = () => {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label htmlFor="link-url" className="block text-sm font-medium text-gray-700 mb-2">
                 URL
@@ -308,16 +309,15 @@ const FooterManagementUpgraded = () => {
               </span>
             </div>
           )}
-          
+
           <div className="flex space-x-4">
             <button
               type="submit"
               disabled={saving || !(editingId ? editingPlatform : selectedPlatform) || !(editingId ? editingUrl : url)}
-              className={`px-6 py-2 rounded-lg font-medium transition duration-200 ${
-                saving || !(editingId ? editingPlatform : selectedPlatform) || !(editingId ? editingUrl : url)
-                  ? 'bg-blue-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 hover:scale-105'
-              } text-white`}
+              className={`px-6 py-2 rounded-lg font-medium transition duration-200 ${saving || !(editingId ? editingPlatform : selectedPlatform) || !(editingId ? editingUrl : url)
+                ? 'bg-blue-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 hover:scale-105'
+                } text-white`}
             >
               {saving ? (
                 <div className="flex items-center">
@@ -328,7 +328,7 @@ const FooterManagementUpgraded = () => {
                 editingId ? 'Update Link' : 'Add Link'
               )}
             </button>
-            
+
             {editingId && (
               <button
                 type="button"

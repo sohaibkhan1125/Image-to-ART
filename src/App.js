@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import HeaderSimple from './components/HeaderSimple';
 import Hero from './components/Hero';
@@ -11,10 +11,12 @@ import FooterSimple from './components/FooterSimple';
 import MaintenanceModeDisplay from './components/MaintenanceModeDisplay';
 import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
-import AdminPanelJSON from './pages/AdminPanelJSON';
+
+// Lazy load admin pages for code splitting
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const AdminPanelJSON = lazy(() => import('./pages/AdminPanelJSON'));
 
 function App() {
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -48,10 +50,10 @@ function App() {
       contrast: contrastValue,
       shadow: shadowValue,
     });
-    
+
     // Set loading state
     setIsGenerating(true);
-    
+
     // Check if image is already loaded
     if (!image.complete || image.naturalWidth === 0) {
       console.log('Image not loaded yet, waiting...');
@@ -61,64 +63,64 @@ function App() {
       };
       return;
     }
-    
+
     try {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      
+
       // Set canvas size to match image
       canvas.width = image.width;
       canvas.height = image.height;
-      
+
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       // Apply canvas filters for real-time effects
       ctx.filter = `
         brightness(${brightnessValue})
         contrast(${contrastValue})
         drop-shadow(0 0 ${shadowValue}px rgba(0, 0, 0, 0.6))
       `;
-      
+
       // When pixel size is 0, show original image
       if (pixelSizeValue <= 0) {
         console.log('Showing original image (no pixelation)');
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       } else {
         console.log('Applying pixelation with size:', pixelSizeValue);
-        
+
         // Disable image smoothing for crisp pixel art
         ctx.imageSmoothingEnabled = false;
-        
+
         // Calculate dimensions for pixelation
         const w = Math.ceil(canvas.width / pixelSizeValue);
         const h = Math.ceil(canvas.height / pixelSizeValue);
-        
+
         console.log('Pixelation dimensions:', w, 'x', h);
-        
+
         // Create temporary canvas for downscaling
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
         tempCanvas.width = w;
         tempCanvas.height = h;
-        
+
         // Disable smoothing on temp canvas too
         tempCtx.imageSmoothingEnabled = false;
-        
+
         // Draw image scaled down to get average colors
         tempCtx.drawImage(image, 0, 0, w, h);
-        
+
         // Scale the small image back up to create pixelation effect
         ctx.drawImage(tempCanvas, 0, 0, w, h, 0, 0, canvas.width, canvas.height);
       }
-      
+
       console.log('Image processing complete with filters');
-      
+
       // Convert to dataURL and set state
       const dataURL = canvas.toDataURL('image/png');
       setPixelatedImage(dataURL);
       setIsGenerating(false);
-      
+
     } catch (error) {
       console.error('Error in image processing:', error);
       setIsGenerating(false);
@@ -137,12 +139,12 @@ function App() {
     console.log('Image uploaded:', image);
     console.log('Image src:', image.src);
     console.log('Image dimensions:', image.width, 'x', image.height);
-    
+
     setUploadedImage(image);
-    
+
     // Show original image immediately as fallback
     setPixelatedImage(image.src);
-    
+
     // Generate pixelated version
     generatePixelatedImage(image);
   };
@@ -191,23 +193,35 @@ function App() {
     <Router>
       <Routes>
         <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-        <Route path="/admin/login" element={<Login />} />
-        <Route path="/admin/signup" element={<Signup />} />
-        <Route 
-          path="/admin/dashboard" 
+        <Route path="/admin/login" element={
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+            <Login />
+          </Suspense>
+        } />
+        <Route path="/admin/signup" element={
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+            <Signup />
+          </Suspense>
+        } />
+        <Route
+          path="/admin/dashboard"
           element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          } 
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            </Suspense>
+          }
         />
-        <Route 
-          path="/admin/panel" 
+        <Route
+          path="/admin/panel"
           element={
-            <PrivateRoute>
-              <AdminPanelJSON />
-            </PrivateRoute>
-          } 
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+              <PrivateRoute>
+                <AdminPanelJSON />
+              </PrivateRoute>
+            </Suspense>
+          }
         />
         <Route path="/" element={
           <div className="min-h-screen bg-gradient-to-br from-dark via-gray-900 to-dark">
@@ -217,7 +231,7 @@ function App() {
             </ErrorBoundary>
             <Hero onUploadClick={scrollToMainTool} />
             <div ref={mainToolRef}>
-              <MainTool 
+              <MainTool
                 onImageUpload={handleImageUpload}
                 uploadedImage={uploadedImage}
                 pixelatedImage={pixelatedImage}
