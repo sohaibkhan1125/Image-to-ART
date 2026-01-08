@@ -11,6 +11,7 @@ import FooterSimple from './components/FooterSimple';
 import MaintenanceModeDisplay from './components/MaintenanceModeDisplay';
 import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import SEO from './components/SEO';
 
 // Lazy load admin pages for code splitting
 const Login = lazy(() => import('./pages/Login'));
@@ -195,11 +196,13 @@ function App() {
         <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
         <Route path="/admin/login" element={
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+            <SEO title="Admin Login" description="Login to the admin panel." />
             <Login />
           </Suspense>
         } />
         <Route path="/admin/signup" element={
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+            <SEO title="Admin Signup" description="Sign up for the admin panel." />
             <Signup />
           </Suspense>
         } />
@@ -225,6 +228,11 @@ function App() {
         />
         <Route path="/" element={
           <div className="min-h-screen bg-gradient-to-br from-dark via-gray-900 to-dark">
+            <SEO
+              title="Home"
+              description="Convert your images to pixel art easily with our free online tool. Upload, adjust settings, and download your pixel art."
+              keywords="pixel art, image converter, 8-bit, retro, pixelate image"
+            />
             <MaintenanceModeDisplay />
             <ErrorBoundary>
               <HeaderSimple />
