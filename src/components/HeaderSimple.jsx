@@ -11,14 +11,14 @@ const HeaderSimple = () => {
 
   useEffect(() => {
     isMountedRef.current = true;
-    
+
     const handleScroll = () => {
       if (!isMountedRef.current) return;
       setIsScrolled(window.scrollY > 50);
     };
 
     window.addEventListener('scroll', handleScroll);
-    
+
     return () => {
       isMountedRef.current = false;
       window.removeEventListener('scroll', handleScroll);
@@ -28,10 +28,11 @@ const HeaderSimple = () => {
   // Title is now managed by useTitleManager hook with AbortError handling
 
   const navItems = [
-    { name: 'Home', href: '#home' },
-    { name: 'How It Works', href: '#how-it-works' },
-    { name: 'About', href: '#about' },
-    { name: 'FAQ', href: '#faq' },
+    { name: 'Home', href: '/#home' },
+    { name: 'Blog', href: '/blog' },
+    { name: 'How It Works', href: '/#how-it-works' },
+    { name: 'About', href: '/#about' },
+    { name: 'FAQ', href: '/#faq' },
   ];
 
   return (
@@ -39,25 +40,25 @@ const HeaderSimple = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-gray-900/95 backdrop-blur-md shadow-lg'
-          : 'bg-transparent'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        ? 'bg-gray-900/95 backdrop-blur-md shadow-lg'
+        : 'bg-transparent'
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="flex items-center space-x-2"
           >
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">P</span>
-            </div>
-            <span className="text-white text-xl font-bold">
-              {loading ? 'Loading...' : websiteTitle}
-            </span>
+            <a href="/" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">P</span>
+              </div>
+              <span className="text-white text-xl font-bold">
+                {loading ? 'Loading...' : websiteTitle}
+              </span>
+            </a>
           </motion.div>
 
           {/* Desktop Navigation */}
@@ -107,7 +108,7 @@ const HeaderSimple = () => {
           </motion.div>
         )}
       </div>
-    </motion.header>
+    </motion.header >
   );
 };
 

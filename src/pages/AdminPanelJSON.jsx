@@ -10,6 +10,7 @@ import FooterManagementUpgraded from '../components/FooterManagementUpgraded';
 import ContentManagement from '../components/ContentManagement';
 import ErrorBoundary from '../components/ErrorBoundary';
 import HeroManagement from '../components/HeroManagement';
+import BlogManagement from '../components/BlogManagement';
 
 const AdminPanelJSON = () => {
   const navigate = useNavigate();
@@ -39,9 +40,8 @@ const AdminPanelJSON = () => {
                     setActiveSection('general');
                     setShowSubMenu(!showSubMenu);
                   }}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition duration-200 ${
-                    activeSection === 'general' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  }`}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition duration-200 ${activeSection === 'general' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <span>General Settings</span>
@@ -55,50 +55,52 @@ const AdminPanelJSON = () => {
                   <div className="ml-4 mt-2 space-y-1">
                     <button
                       onClick={() => setActiveSection('maintenance')}
-                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${
-                        activeSection === 'maintenance' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`}
+                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${activeSection === 'maintenance' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`}
                     >
                       Maintenance Mode
                     </button>
                     <button
                       onClick={() => setActiveSection('title-management')}
-                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${
-                        activeSection === 'title-management' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`}
+                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${activeSection === 'title-management' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`}
                     >
                       Website Title Management
                     </button>
                     <button
                       onClick={() => setActiveSection('footer-management')}
-                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${
-                        activeSection === 'footer-management' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`}
+                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${activeSection === 'footer-management' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`}
                     >
                       Footer Management
                     </button>
                     <button
                       onClick={() => setActiveSection('content-management')}
-                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${
-                        activeSection === 'content-management' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`}
+                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${activeSection === 'content-management' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`}
                     >
                       Content Management
                     </button>
                     <button
                       onClick={() => setActiveSection('hero-management')}
-                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${
-                        activeSection === 'hero-management' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`}
+                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${activeSection === 'hero-management' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`}
                     >
                       Hero Management
+                    </button>
+                    <button
+                      onClick={() => setActiveSection('blog-management')}
+                      className={`w-full text-left px-4 py-2 rounded-lg text-sm transition duration-200 ${activeSection === 'blog-management' ? 'bg-blue-500 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`}
+                    >
+                      Blog Management
                     </button>
                   </div>
                 )}
               </div>
             </nav>
           </div>
-          
+
           {/* Logout Button */}
           <div className="absolute bottom-4 left-4 right-4">
             <button
@@ -142,6 +144,12 @@ const AdminPanelJSON = () => {
             </ErrorBoundary>
           )}
 
+          {activeSection === 'blog-management' && (
+            <ErrorBoundary>
+              <BlogManagement />
+            </ErrorBoundary>
+          )}
+
           {activeSection === 'general' && (
             <div className="max-w-2xl">
               <h2 className="text-3xl font-bold text-gray-900 mb-8">General Settings</h2>
@@ -155,6 +163,7 @@ const AdminPanelJSON = () => {
                   <li>• <strong>Website Title Management:</strong> Update website title</li>
                   <li>• <strong>Footer Management:</strong> Manage social media links in footer</li>
                   <li>• <strong>Content Management:</strong> Create and manage content displayed above FAQ</li>
+                  <li>• <strong>Blog Management:</strong> Create, edit, and publish blog posts</li>
                 </ul>
                 <div className="mt-4 p-4 bg-white rounded-lg">
                   <h4 className="font-semibold text-gray-800 mb-2">Backend Information</h4>

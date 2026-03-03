@@ -62,10 +62,11 @@ const FooterSimple = () => {
   ];
 
   const quickLinks = [
-    { name: 'Home', href: '#home' },
-    { name: 'How It Works', href: '#how-it-works' },
-    { name: 'About', href: '#about' },
-    { name: 'Contact', href: '#contact' },
+    { name: 'Home', href: '/#home' },
+    { name: 'Blog', href: '/blog' },
+    { name: 'How It Works', href: '/#how-it-works' },
+    { name: 'About', href: '/#about' },
+    { name: 'Contact', href: '/#contact' },
   ];
 
   const legalLinks = [

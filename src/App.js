@@ -18,6 +18,8 @@ const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AdminPanelJSON = lazy(() => import('./pages/AdminPanelJSON'));
+const Blog = lazy(() => import('./pages/Blog'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
 
 function App() {
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -226,6 +228,16 @@ function App() {
             </Suspense>
           }
         />
+        <Route path="/blog" element={
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+            <Blog />
+          </Suspense>
+        } />
+        <Route path="/blog/:slug" element={
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+            <BlogPost />
+          </Suspense>
+        } />
         <Route path="/" element={
           <div className="min-h-screen bg-gradient-to-br from-dark via-gray-900 to-dark">
             <SEO
