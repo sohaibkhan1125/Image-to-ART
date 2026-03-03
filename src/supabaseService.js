@@ -273,7 +273,7 @@ export function subscribeToContent(slug, callback) {
  */
 export async function testConnection() {
     try {
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from(TABLE_NAME)
             .select("count")
             .limit(1);

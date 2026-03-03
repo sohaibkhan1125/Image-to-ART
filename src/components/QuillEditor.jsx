@@ -175,7 +175,7 @@ const QuillEditor = ({ value, onChange, onSave }) => {
                 indent = indent.substring(tab.length);
             }
             formatted += indent + '<' + element + '>\r\n';
-            if (element.match(/^<?\w[^>]*[^\/]$/) && !element.startsWith("input") && !element.startsWith("img") && !element.startsWith("br")) {
+            if (element.match(/^<?\w[^>]*[^/]$/) && !element.startsWith("input") && !element.startsWith("img") && !element.startsWith("br")) {
                 indent += tab;
             }
         });
